@@ -1,24 +1,36 @@
-
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: kaniko-build
+  name: kaniko-build-job
   namespace: selfhosted
 spec:
   template:
     spec:
+      initContainers:
+      - name: git-clone
+        image: alpine/git
+        args:
+          - clone
+          - --depth=1
+          - --single-branch
+          - --branch=main
+          - https://github.com/Dhanush1219/azureselfhostedagent.git
+          - /workspace
+        volumeMounts:
+          - name: kaniko-workspace
+            mountPath: /workspace
+
       containers:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-          - "--context=git://github.com/Dhanush1219/azureselfhostedagent.git#main"
-          - "--dockerfile=Dockerfile"
-          - "--destination=<your-acr-name>.azurecr.io/azp-agent:latest"
+          - "--dockerfile=/workspace/Dockerfile"
+          - "--context=/workspace"
+          - "--destination=hardikpoc.azurecr.io/kaniko-build:latest"
         volumeMounts:
-          - name: kaniko-secret
-            mountPath: /kaniko/.docker
-      restartPolicy: Never
+          - name: kaniko-workspace
+            mountPath: /workspace
       volumes:
-        - name: kaniko-secret
-          secret:
-            secretName: acr-secret
+        - name: kaniko-workspace
+          emptyDir: {}
+      restartPolicy: Never
