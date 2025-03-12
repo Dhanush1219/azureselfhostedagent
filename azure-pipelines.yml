@@ -1,0 +1,14 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: 'aks-kaniko-test'
+    namespace: 'selfhosted'
+    command: 'apply'
+    arguments: '-f kaniko-build.yaml'
