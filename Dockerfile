@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-transport-https \
     software-properties-common \
     sudo \
-    docker.io \ 
+    docker.io \
     build-essential \
     nodejs \
     iputils-ping \
@@ -96,4 +96,3 @@ USER azureuser
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "exec /azp/agent/start.sh"]
-
