@@ -1,9 +1,10 @@
+# Use Ubuntu 20.04 as the base image
 FROM ubuntu:20.04
 
 # Set non-interactive mode to prevent prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required dependencies including Docker
+# Install required dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -34,9 +35,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g && \
     rm -rf /var/lib/apt/lists/*
 
-# Add user to docker group for non-root access
-RUN usermod -aG docker azureuser || true
-
 # Install Node.js
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs
@@ -58,10 +56,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y golang
 RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 # Install kubectl
-RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    echo "deb https://apt.kubernetes.io/ kubernetes-focal main" | tee -a /etc/apt/sources.list.d/kubernetes.list && \
-    apt-get update && \
-    apt-get install -y kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 # Install PowerShell
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
@@ -98,4 +94,3 @@ USER azureuser
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "exec /azp/agent/start.sh"]
-
