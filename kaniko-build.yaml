@@ -1,3 +1,4 @@
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -10,15 +11,14 @@ spec:
       - name: kaniko
         image: gcr.io/kaniko-project/executor:latest
         args:
-        - "--dockerfile=Dockerfile"
-        - "--context=https://github.com/Dhanush1219/azureselfhostedagent.git"
-        - "--destination=hardikpoc.azurecr.io/selfhosted-agent:latest"
+          - "--context=git://github.com/Dhanush1219/azureselfhostedagent.git#main"
+          - "--dockerfile=Dockerfile"
+          - "--destination=<your-acr-name>.azurecr.io/azp-agent:latest"
         volumeMounts:
-        - name: kaniko-secret
-          mountPath: /kaniko/.docker
-      volumes:
-      - name: kaniko-secret
-        secret:
-          secretName: acr-secret
+          - name: kaniko-secret
+            mountPath: /kaniko/.docker
       restartPolicy: Never
-
+      volumes:
+        - name: kaniko-secret
+          secret:
+            secretName: regcred
