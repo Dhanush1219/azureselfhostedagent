@@ -26,7 +26,7 @@ spec:
         args:
           - "--dockerfile=/Dockerfile"
           - "--context=/workspace"
-          - "--destination=hardikpoc.azurecr.io/kaniko-build:latest"
+          - "--destination=hardikpoc.azurecr.io/kaniko-build:v1"
         volumeMounts:
           - name: kaniko-workspace
             mountPath: /workspace
