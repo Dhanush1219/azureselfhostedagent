@@ -1,10 +1,9 @@
-# Use Ubuntu 20.04 as the base image
 FROM ubuntu:20.04
 
 # Set non-interactive mode to prevent prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required dependencies
+# Install required dependencies including Docker
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -35,6 +34,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g && \
     rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user and necessary directories
+RUN useradd -m azureuser && \
+    usermod -aG sudo azureuser && \
+    mkdir -p /azp/agent && \
+    chown -R azureuser:azureuser /azp && \
+    chmod -R 777 /azp/agent
+
+# Allow azureuser to use Docker without a password
+RUN echo "azureuser ALL=(ALL) NOPASSWD: /usr/bin/dockerd" >> /etc/sudoers
+
 # Install Node.js
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs
@@ -64,19 +73,8 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-focal-prod focal main" > /etc/apt/sources.list.d/microsoft.list' && \
     apt-get update && apt-get install -y powershell
 
-# Create a non-root user and necessary directories
-RUN useradd -m azureuser && \
-    usermod -aG sudo azureuser && \
-    mkdir -p /azp/agent && \
-    chown -R azureuser:azureuser /azp && \
-    chmod -R 777 /azp/agent
-
-# Switch to work directory
-WORKDIR /azp/agent
-
 # Install Azure DevOps agent
 RUN curl -L https://vstsagentpackage.azureedge.net/agent/3.220.2/vsts-agent-linux-x64-3.220.2.tar.gz -o vsts-agent.tar.gz && \
-    mkdir -p /azp/agent && \
     tar -zxvf vsts-agent.tar.gz -C /azp/agent && \
     rm vsts-agent.tar.gz && \
     chown -R azureuser:azureuser /azp/agent && \
@@ -89,8 +87,12 @@ COPY start.sh /azp/agent/start.sh
 RUN chmod +x /azp/agent/start.sh && \
     chown -R azureuser:azureuser /azp/agent/start.sh
 
+# Switch to work directory
+WORKDIR /azp/agent
+
 # Switch to non-root user
 USER azureuser
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "exec /azp/agent/start.sh"]
+
