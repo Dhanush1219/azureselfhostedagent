@@ -16,7 +16,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: azdo-agent
-        image: hardikpoc.azurecr.io/kaniko-build:latest
+        image: hardikpoc.azurecr.io/kaniko-build:v1
         env:
         - name: AZP_URL
           value: "https://dev.azure.com/hardikkumarchauhan0390"

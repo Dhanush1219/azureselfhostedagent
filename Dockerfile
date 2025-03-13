@@ -34,15 +34,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user and necessary directories
+# Create a non-root user and add to docker group
 RUN useradd -m azureuser && \
     usermod -aG sudo azureuser && \
-    mkdir -p /azp/agent && \
-    chown -R azureuser:azureuser /azp && \
-    chmod -R 777 /azp/agent
+    usermod -aG docker azureuser && \
+    echo "azureuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Allow azureuser to use Docker without a password
-RUN echo "azureuser ALL=(ALL) NOPASSWD: /usr/bin/dockerd" >> /etc/sudoers
+# Ensure Docker starts without sudo
+RUN chmod 666 /var/run/docker.sock
 
 # Install Node.js
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
@@ -73,6 +72,14 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-focal-prod focal main" > /etc/apt/sources.list.d/microsoft.list' && \
     apt-get update && apt-get install -y powershell
 
+# Create necessary directories
+RUN mkdir -p /azp/agent && \
+    chown -R azureuser:azureuser /azp && \
+    chmod -R 777 /azp/agent
+
+# Switch to work directory
+WORKDIR /azp/agent
+
 # Install Azure DevOps agent
 RUN curl -L https://vstsagentpackage.azureedge.net/agent/3.220.2/vsts-agent-linux-x64-3.220.2.tar.gz -o vsts-agent.tar.gz && \
     tar -zxvf vsts-agent.tar.gz -C /azp/agent && \
@@ -87,12 +94,8 @@ COPY start.sh /azp/agent/start.sh
 RUN chmod +x /azp/agent/start.sh && \
     chown -R azureuser:azureuser /azp/agent/start.sh
 
-# Switch to work directory
-WORKDIR /azp/agent
-
 # Switch to non-root user
 USER azureuser
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "exec /azp/agent/start.sh"]
-
